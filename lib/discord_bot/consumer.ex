@@ -9,8 +9,6 @@ defmodule DiscordBot.Consumer do
     cond do
       String.starts_with?(msg.content, "!personagem ") -> handlePersonagem(msg)
       msg.content == "!personagem" -> Api.create_message(msg.channel_id, "Digite **!personagem <id-do-personagem>**")
-
-      String.starts_with?(msg.content, "!pong") -> Api.create_message(msg.channel_id, "ping")
       true -> :ignore
     end
   end

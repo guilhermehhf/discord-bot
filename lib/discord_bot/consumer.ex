@@ -27,7 +27,8 @@ defmodule DiscordBot.Consumer do
       #9.
       String.starts_with?(msg.content, "!malha ") -> handleMalha(msg)
       msg.content == "!malha" -> Api.create_message(msg.channel_id,"Digite **!malha <nome>** <identificador-do-pais>** exemplo 'CE' para Ceará, use **!identificadores uf** para ver a lista")
-
+      #10.
+      msg.content == "!noticia" -> handleNoticia(msg)
       true -> :ignore
     end
   end
@@ -61,6 +62,7 @@ defmodule DiscordBot.Consumer do
   #3.comparar projeção populacional {cidade1}-{cidade2}:
   defp handleProjPopulacional do
     # https://servicodados.ibge.gov.br/api/v1/projecoes/populacao/{localidade}
+
   end
 
   #4. ranking nome dec {década}:
@@ -127,10 +129,16 @@ defmodule DiscordBot.Consumer do
   end
 
   #10.uma notícia do IBGE:
-	# *Pegar uma notícia aleatória do IBGE no último mês
+	# *Pegar aleatóriamente uma das 60 ultimas notícias do IBGE
   defp handleNoticia(msg) do
-    # http://servicodados.ibge.gov.br/api/v3/noticias/
+    resp = HTTPoison.get!("http://servicodados.ibge.gov.br/api/v3/noticias/?tipo=noticia")
+
+    {:ok, list} = Poison.decode(resp.body)
+    random_number = :rand.uniform(60)
+    link = Enum.fetch!(list["items"], random_number)["link"]
+    Api.create_message(msg.channel_id, "#{link}")
   end
+
   def handle_event(_event) do
     :noop
   end

@@ -54,7 +54,7 @@ defmodule DiscordBot.Consumer do
     ids = String.split(Enum.fetch!(aux, 2), "-", parts: 2)
     resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v1/paises/#{Enum.fetch!(ids, 0)}|#{Enum.fetch!(ids, 1)}/indicadores/77823")
     {:ok, list} = Poison.decode(resp.body)
-    list = Enum.fetch!(list, 0)["series"] 
+    list = Enum.fetch!(list, 0)["series"]
     list = Enum.map(list, fn pais -> formatObject(pais, msg) end)
     pais1 = Enum.find(list, fn pais -> pais[:id] == Enum.fetch!(ids, 0) end)
     pais2 = Enum.find(list, fn pais -> pais[:id] == Enum.fetch!(ids, 1) end)
@@ -66,7 +66,7 @@ defmodule DiscordBot.Consumer do
    {:ok, pibValue} = Enum.fetch(Map.values(pibByYear), 0)
     retorno = %{
       id: pais["pais"]["id"],
-     nome: pais["pais"]["nome"], 
+     nome: pais["pais"]["nome"],
      pib: pibValue}
   end
 
@@ -100,10 +100,10 @@ defmodule DiscordBot.Consumer do
     {:ok, list1} = Poison.decode(respAnoAtual.body)
     {:ok, list2} = Poison.decode(respAnoPost.body)
     listTotal = Enum.concat(list1, list2)
-    
+
     feriado = Enum.find(listTotal, nil, fn feriado -> compareDates(data, feriado["date"]) end )
     Api.create_message(msg.channel_id, ">>> #{feriado["date"]} - #{feriado["name"]} ")
- 
+
   end
 
   defp compareDates(date1, date2) do
@@ -163,9 +163,9 @@ defmodule DiscordBot.Consumer do
     resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v1/localidades/estados")
 
     {:ok, list} = Poison.decode(resp.body)
-   
+
     nomes_siglas = Enum.map(list, fn estado_stats -> "**#{estado_stats["id"]}** - **#{estado_stats["sigla"]}** - *#{estado_stats["nome"]}*\n " end)
-  
+
     Api.create_message(msg.channel_id, ">>> #{nomes_siglas}")
   end
 
@@ -180,7 +180,7 @@ defmodule DiscordBot.Consumer do
     Api.create_message(msg.channel_id, retorno)
   end
 
-  
+
   #9.
   defp handleQualidadeAr(msg) do
     aux = String.split(msg.content, " ", parts: 3)
@@ -219,8 +219,6 @@ defmodule DiscordBot.Consumer do
     data = Enum.fetch!(String.split(noticia["data_publicacao"], " "),0)
     Api.create_message(msg.channel_id, "Titulo: #{titulo}\nData: #{data}\n #{noticia["link"]}")
   end
-
-
 
   def handle_event(_event) do
     :noop

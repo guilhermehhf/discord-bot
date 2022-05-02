@@ -1,4 +1,27 @@
-# SnakeBot
+# Information Bot
+
+## Members: 
+Guilherme Henrique Holanda Fernandes
+Ingrid Moreira da Costa
+
+## Commands:
+
+**!capital {pais}:**
+*O bot responde com a capital do país cuja sigla foi fornecida*
+**!proximo feriado {UF}**
+*O usuário é respondido com o próximo feriado municipal ou estadual e sua respectiva data*
+**!ranking nome dec {década}:**
+*Responde com o nome mais comum na década fornecida*
+**!pessoas com nome {nome}:**
+*Responde ao usuário a quantidade de pessoas batizadas com fornecido no comando na última década*
+**!qtd cidades {UF}:**
+*Responde ao usuário com a quantidade de cidades dentro da unidade de federação fornecida*
+**!identificadores uf:**
+*Fornece ao usuário as siglas de todos os estados brasileiros*
+**!comparar aqi:**
+*O usuário coloca dois países e é respondido qual deles tem o ar mais limpo.*
+**!noticia**
+*Retorna ao usuário aleatoriamente uma das últimas 60 notícias do IBGE*
 
 ## Configuration
 Run mix deps.get to install dependences of this project.

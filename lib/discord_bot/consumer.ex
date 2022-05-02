@@ -25,12 +25,18 @@ defmodule DiscordBot.Consumer do
       #7.
       msg.content == "!identificadores uf" -> handleIdentificadoresUF(msg)
       #9.
-      String.starts_with?(msg.content, "!malha ") -> handleMalha(msg)
-      msg.content == "!malha" -> Api.create_message(msg.channel_id,"Digite **!malha <nome>** <identificador-do-pais>** exemplo 'CE' para Ceará, use **!identificadores uf** para ver a lista")
+      String.starts_with?(msg.content, "!comparar aqi ") -> handleQualidadeAr(msg)
+      msg.content == "!comparar aqi" -> Api.create_message(msg.channel_id,"Digite **!comparar aqi <país1>,<país2>** para comparar a qualidade do ar entre dois países")
       #10.
       msg.content == "!noticia" -> handleNoticia(msg)
+
+      msg.content == "!comandos" -> handleComandos(msg)
       true -> :ignore
     end
+  end
+
+  defp handleComandos(msg) do
+    Api.create_message(msg.channel_id, ">>> !pib\n!historico país\n!pessoas com nome\n!identificadores uf\n!ranking nomes\n!noticia")
   end
 
   #1. obter pib {pais1}&{pais2}&{pais3}
@@ -95,7 +101,7 @@ defmodule DiscordBot.Consumer do
     if Enum.count(list) != 0 do
       map = Enum.fetch!(list, 0)["res"]
       result = Enum.fetch!(map,Enum.count(map)-1)
-      periodo = String.replace(String.replace(result["periodo"], "[",""),",","")
+      periodo = String.replace(String.replace(result["periodo"], "[",""),",","-")
       Api.create_message(msg.channel_id, "*Periodo:* #{periodo}\n*Frequência:* #{result["frequencia"]}")
     else
       Api.create_message(msg.channel_id, "Digite **!pessoas com nome <nome>**")
@@ -119,13 +125,29 @@ defmodule DiscordBot.Consumer do
   end
 
   #9.
-  defp handleMalha(msg) do
-    aux = String.split(msg.content, " ", parts: 2)
-    id = Enum.fetch!(aux, 1)
+  defp handleQualidadeAr(msg) do
+    aux = String.split(msg.content, " ", parts: 3)
+    [pais1,pais2] = String.split(Enum.fetch!(aux, 2), ",")
 
-    resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v3/malhas/estados/#{id}")
+    resp1 = HTTPoison.get!("http://api.waqi.info/feed/#{String.downcase(pais1)}/?token=37c316562d2bc43d756ef7c92de8cb5dae665864")
+    resp2 = HTTPoison.get!("http://api.waqi.info/feed/#{String.downcase(pais2)}/?token=37c316562d2bc43d756ef7c92de8cb5dae665864")
 
-    Api.create_message(msg.channel_id, "#{resp.body}")
+    {:ok, list1} = Poison.decode(resp1.body)
+    {:ok, list2} = Poison.decode(resp2.body)
+
+    if list1["status"] == "ok" and list2["status"] == "ok" do
+      cidade1 = list1["data"]["city"]
+      cidade2 = list2["data"]["city"]
+      cond do
+        list1["data"]["aqi"] > list2["data"]["aqi"] -> Api.create_message(msg.channel_id, "A qualidade do ar do cidade **#{cidade2["name"]}** com *aqi = #{list2["data"]["aqi"]}* é melhor que a da cidade **#{cidade1["name"]}** com aqi = #{list1["data"]["aqi"]}\nLinks:\n#{cidade1["url"]}\n#{cidade2["url"]}")
+        list1["data"]["aqi"] < list2["data"]["aqi"] -> Api.create_message(msg.channel_id, "A qualidade do ar da cidade **#{cidade1["name"]}** com *aqi = #{list1["data"]["aqi"]}* é melhor que a da cidade **#{cidade2["name"]}** com aqi = #{list2["data"]["aqi"]}\nLinks:\n#{cidade1["url"]}\n#{cidade2["url"]}")
+        true -> IO.puts(list1["data"]["aqi"])
+      end
+    else
+      Api.create_message(msg.channel_id, "Algum dos países passados no comando é inválido")
+    end
+
+
   end
 
   #10.uma notícia do IBGE:
@@ -135,9 +157,13 @@ defmodule DiscordBot.Consumer do
 
     {:ok, list} = Poison.decode(resp.body)
     random_number = :rand.uniform(60)
-    link = Enum.fetch!(list["items"], random_number)["link"]
-    Api.create_message(msg.channel_id, "#{link}")
+    noticia = Enum.fetch!(list["items"], random_number)
+    titulo = noticia["titulo"]
+    data = Enum.fetch!(String.split(noticia["data_publicacao"], " "),0)
+    Api.create_message(msg.channel_id, "Titulo: #{titulo}\nData: #{data}\n #{noticia["link"]}")
   end
+
+
 
   def handle_event(_event) do
     :noop

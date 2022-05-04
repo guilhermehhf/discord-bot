@@ -1,10 +1,18 @@
 # Information Bot
 
 ## Members: 
-Guilherme Henrique Holanda Fernandes
-Ingrid Moreira da Costa
+**Guilherme Henrique Holanda Fernandes**\n
+**Ingrid Moreira da Costa***
+
+## APIs:
+[IBGE](https://servicodados.ibge.gov.br/api/docs)
+[World's Air Pollution](https://aqicn.org/api/)
+[InverTexto](https://api.invertexto.com/)
 
 ## Commands:
+
+**!compara pib {pais1}-{pais2}:**
+*O bot retorna a comparação do pib per capita entre os dois países*
 
 **!capital {pais}:**
 *O bot responde com a capital do país cuja sigla foi fornecida*

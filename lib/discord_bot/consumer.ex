@@ -10,76 +10,83 @@ defmodule DiscordBot.Consumer do
 
   def handle_event({:MESSAGE_CREATE,msg,_ws_state}) do
     cond do
+
       #1.
-      # String.starts_with?(msg.content, "!comparar pib ") -> handlePib(msg)
-      # msg.content == "!comparar pib" -> Api.create_message(msg.channel_id,"Digite **!comparar pib <identificador-do-pais1>-<identificador-do-pais2>** exemplo 'BR' para Brasil, use **!identificadores paises** para ver a lista")
+      String.starts_with?(msg.content, "!comparar pib ") -> handlePib(msg)
+      msg.content == "!comparar pib" -> Api.create_message(msg.channel_id,"Digite **!comparar pib <identificador-do-pais1>-<identificador-do-pais2>** exemplo 'BR' para Brasil, use **!identificadores paises** para ver a lista")
       #2.
-      String.starts_with?(msg.content, "!capital país ") -> handleHistorico(msg)
-      msg.content == "!capital país" -> Api.create_message(msg.channel_id, "Digite **!capital país <identificador-do-pais>** exemplo 'BR' para Brasil, use **!identificadores paises** para ver a lista")
+      String.starts_with?(msg.content, "!capital ") -> handleCapital(msg)
+      msg.content == "!capital" -> Api.create_message(msg.channel_id, "Digite **!capital <identificador-do-pais>** exemplo 'BR' para Brasil, use **!identificadores paises** para ver a lista")
       #3.
       String.starts_with?(msg.content, "!proximo feriado ") ->  handleProximoFeriado(msg)
       msg.content == "!proximo feriado" -> Api.create_message(msg.channel_id, "Digite **!proximo feriado <UF>**")
       #4.
+      String.starts_with?(msg.content, "!converter ") -> handleConversor(msg)
+      msg.content == "!converter" -> Api.create_message(msg.channel_id, "Digite **!converter <moeda1>-<moeda2> <valor>**")
+      #5.
       String.starts_with?(msg.content, "!ranking nomes ") -> handleRankingNomes(msg)
       msg.content == "!ranking nomes" -> Api.create_message(msg.channel_id,"Digite **!ranking nomes <decada> exemplos: 1960 ou 1970**")
-      #5.
+      #6.
       String.starts_with?(msg.content, "!pessoas com nome ") -> handleQuantidadePessoasComNome(msg)
       msg.content == "!pessoas com nome" -> Api.create_message(msg.channel_id,"Digite **!pessoas com nome <nome>**")
-       #6.
-       String.starts_with?(msg.content, "!qtd cidades ") -> handleQuantidadeCidades(msg)
-       msg.content == "!qtd cidades" -> Api.create_message(msg.channel_id,"Digite **!qtd cidades <UF>**")
-        #7.
-      msg.content == "!identificadores uf" -> handleIdentificadoresUF(msg)
+      #7.
+      String.starts_with?(msg.content, "!qtd cidades ") -> handleQuantidadeCidades(msg)
+      msg.content == "!qtd cidades" -> Api.create_message(msg.channel_id,"Digite **!qtd cidades <UF>**")
       #8.
-      String.starts_with?(msg.content, "!pesquisar atv economica ") -> handlePesquisarAtvEcon(msg)
-      msg.content == "!pesquisar atv economica" -> Api.create_message(msg.channel_id,"Digite **!pesquisar atv economica<atividade-economica>**")
+      msg.content == "!identificadores uf" -> handleIdentificadoresUF(msg)
       #9.
       String.starts_with?(msg.content, "!comparar aqi ") -> handleQualidadeAr(msg)
-      msg.content == "!comparar aqi" -> Api.create_message(msg.channel_id,"Digite **!comparar aqi <país1>,<país2>** para comparar a qualidade do ar entre dois países")
+      msg.content == "!comparar aqi" -> Api.create_message(msg.channel_id,"Digite **!comparar aqi <país1>-<país2>** para comparar a qualidade do ar entre dois países")
       #10.
       msg.content == "!noticia" -> handleNoticia(msg)
 
+      #helper
       msg.content == "!comandos" -> handleComandos(msg)
+      msg.content == "!cmds" -> handleComandos(msg)
+      msg.content == "!help" -> handleComandos(msg)
       true -> :ignore
     end
   end
 
   defp handleComandos(msg) do
-    Api.create_message(msg.channel_id, ">>> !pib\n!historico país\n!pessoas com nome\n!identificadores uf\n!ranking nomes\n!noticia")
+    Api.create_message(msg.channel_id, ">>> **!comparar pib *<identificador-do-pais1>-<identificador-do-pais2>*\n!capital *<identificador-do-pais>*\n!proximo feriado *<UF>*\n!converter *<moeda1>-<moeda2> <valor>*\n!pessoas com nome *<nome>*\n!qtd cidades *<UF>*\n!comparar aqi *<país1>-<país2>*\n!identificadores uf\n!ranking nomes *<decada>*\n!noticia**")
   end
 
-  #1. comparar pib {pais1}-{pais2}
+
+  #1. !comparar pib {pais1}-{pais2}
   defp handlePib(msg) do
     aux = String.split(msg.content, " ", parts: 3)
     ids = String.split(Enum.fetch!(aux, 2), "-", parts: 2)
     resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v1/paises/#{Enum.fetch!(ids, 0)}|#{Enum.fetch!(ids, 1)}/indicadores/77823")
     {:ok, list} = Poison.decode(resp.body)
     list = Enum.fetch!(list, 0)["series"]
-    list = Enum.map(list, fn pais -> formatObject(pais, msg) end)
+    list = Enum.map(list, fn pais -> formatObject(pais) end)
+
     pais1 = Enum.find(list, fn pais -> pais[:id] == Enum.fetch!(ids, 0) end)
     pais2 = Enum.find(list, fn pais -> pais[:id] == Enum.fetch!(ids, 1) end)
     Api.create_message(msg.channel_id, "#{formatMessage(pais1, pais2)}")
   end
 
-  defp formatObject(pais, msg) do
+  defp formatObject(pais) do
    {:ok, pibByYear} = Enum.fetch(pais["serie"], -2)
    {:ok, pibValue} = Enum.fetch(Map.values(pibByYear), 0)
-    retorno = %{
-      id: pais["pais"]["id"],
-     nome: pais["pais"]["nome"],
-     pib: pibValue}
+    %{
+    id: pais["pais"]["id"],
+    nome: pais["pais"]["nome"],
+    pib: pibValue}
+
   end
 
   defp formatMessage(pais1, pais2) do
-    porcentagem = String.to_float(pais1[:pib])/String.to_float(pais2[:pib]) * 100.00
-    retorno = " O pib per capita do #{pais1["nome"]} é #{porcentagem}% do mesmo indicador do #{pais2["nome"]}"
+    porcentagem = Float.ceil(String.to_integer(pais1[:pib])/String.to_integer(pais2[:pib]) * 100,1)
+    ">>> O pib per capita do #{pais1[:nome]} é #{porcentagem}% do mesmo indicador do #{pais2[:nome]}"
     #retorno = "#{Float.parse(pais2[:pib])}"
   end
 
-  #2. historia {pais}
-  defp handleHistorico(msg) do
-    aux = String.split(msg.content, " ", parts: 3)
-    id = Enum.fetch!(aux, 2)
+  #2. !capital {pais}
+  defp handleCapital(msg) do
+    aux = String.split(msg.content, " ", parts: 2)
+    id = Enum.fetch!(aux, 1)
 
     resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v1/paises/#{id}")
 
@@ -89,7 +96,7 @@ defmodule DiscordBot.Consumer do
   end
 
 
-  #3.proximo feriado {UF}:
+  #3. !proximo feriado {UF}:
   defp handleProximoFeriado(msg) do
     aux = String.split(msg.content, " ", parts: 3)
     estado = Enum.fetch!(aux, 2)
@@ -111,7 +118,21 @@ defmodule DiscordBot.Consumer do
       Date.compare(date1, dateFeriado) == :lt
   end
 
-  #4. ranking nome dec {década}:
+  #4. !converter {moeda1}-{moeda2} {valor}
+  defp handleConversor(msg) do
+    aux = String.split(msg.content, " ", parts: 3)
+    [moeda1,moeda2] = String.split(Enum.fetch!(aux, 1), "-")
+    valor = Enum.fetch!(aux, 2)
+    resp = HTTPoison.get!("https://api.invertexto.com/v1/currency/#{moeda1}_#{moeda2}?token=755|FpPjNcxNstET6qdFcUwYucpEDmg2Njer")
+    {:ok, list} = Poison.decode(resp.body)
+    cotacao = list["#{moeda1}_#{moeda2}"]["price"]
+    conversao = Float.round(String.to_integer(valor)*cotacao,2)
+
+
+    Api.create_message(msg.channel_id, ">>> ***O valor de 1 #{moeda1} é equivalente a #{Float.round(cotacao,2)} #{moeda2}***\n*Converção de #{valor} #{moeda1}*: **#{conversao} #{moeda2}**")
+  end
+
+  #5. !ranking nome {década}:
   defp handleRankingNomes(msg) do
     aux = String.split(msg.content, " ", parts: 3)
     decada = Enum.fetch!(aux, 2)
@@ -124,12 +145,12 @@ defmodule DiscordBot.Consumer do
       rank = Enum.map(map, fn campo -> "**Nome: #{campo["nome"]}**\nQuantidade: #{campo["frequencia"]}\nRank: #{campo["ranking"]}\n" end)
       Api.create_message(msg.channel_id, ">>> #{rank}")
     else
-      Api.create_message(msg.channel_id, "Digite **!ranking nomes <decada> exemplos: 1960 ou 1970**")
+      Api.create_message(msg.channel_id, ">>> Digite **!ranking nomes <decada> exemplos: 1960 ou 1970**")
     end
 
   end
 
-  #5. obter qtd nome {nome}:
+  #6. !pessoas com nome {nome}:
   defp handleQuantidadePessoasComNome(msg) do
     aux = String.split(msg.content, " ", parts: 4)
     nome = Enum.fetch!(aux, 3)
@@ -142,13 +163,13 @@ defmodule DiscordBot.Consumer do
       map = Enum.fetch!(list, 0)["res"]
       result = Enum.fetch!(map,Enum.count(map)-1)
       periodo = String.replace(String.replace(result["periodo"], "[",""),",","-")
-      Api.create_message(msg.channel_id, "*Periodo:* #{periodo}\n*Frequência:* #{result["frequencia"]}")
+      Api.create_message(msg.channel_id, ">>> *Periodo:* #{periodo}\n*Frequência:* #{result["frequencia"]}")
     else
-      Api.create_message(msg.channel_id, "Digite **!pessoas com nome <nome>**")
+      Api.create_message(msg.channel_id, ">>> Digite **!pessoas com nome <nome>**")
     end
   end
 
-   #6. qtd cidades {UF}:
+   #7. !qtd cidades {UF}:
    defp handleQuantidadeCidades(msg) do
     aux = String.split(msg.content, " ", parts: 3)
     uf = Enum.fetch!(aux, 2)
@@ -158,7 +179,7 @@ defmodule DiscordBot.Consumer do
     Api.create_message(msg.channel_id, ">>> #{qtd_cidades}")
   end
 
-  #7.obter siglas dos estados:
+  #8. !identificadores uf:
   defp handleIdentificadoresUF(msg) do
     resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v1/localidades/estados")
 
@@ -169,22 +190,10 @@ defmodule DiscordBot.Consumer do
     Api.create_message(msg.channel_id, ">>> #{nomes_siglas}")
   end
 
-  #8.pesquisar atv econ {atividade-economica}:
-  defp handlePesquisarAtvEcon(msg) do
-    aux = String.split(msg.content, " ", parts: 4)
-    txt = Enum.fetch!(aux, 3)
-    resp = HTTPoison.get!("https://servicodados.ibge.gov.br/api/v2/cnae/subclasses")
-    {:ok, list} = Poison.decode(resp.body)
-    subclasses = Enum.filter(list, fn subclasse -> String.contains?("O CARRO DO PEDRO É PRETO", String.upcase(txt)) end)
-    retorno = Enum.map(subclasses, fn subclasse -> "**#{subclasse["id"]} - #{subclasse["descricao"]}**\n"end)
-    Api.create_message(msg.channel_id, retorno)
-  end
-
-
-  #9.
+  #9. !comparar aqi
   defp handleQualidadeAr(msg) do
     aux = String.split(msg.content, " ", parts: 3)
-    [pais1,pais2] = String.split(Enum.fetch!(aux, 2), ",")
+    [pais1,pais2] = String.split(Enum.fetch!(aux, 2), "-")
 
     resp1 = HTTPoison.get!("http://api.waqi.info/feed/#{String.downcase(pais1)}/?token=37c316562d2bc43d756ef7c92de8cb5dae665864")
     resp2 = HTTPoison.get!("http://api.waqi.info/feed/#{String.downcase(pais2)}/?token=37c316562d2bc43d756ef7c92de8cb5dae665864")
@@ -201,14 +210,14 @@ defmodule DiscordBot.Consumer do
         true -> IO.puts(list1["data"]["aqi"])
       end
     else
-      Api.create_message(msg.channel_id, "Algum dos países passados no comando é inválido")
+      Api.create_message(msg.channel_id, ">>> Algum dos países/cidades passados no comando não foi encontrado")
     end
   end
 
 
-
-  #10.uma notícia do IBGE:
-	# *Pegar aleatóriamente uma das 60 ultimas notícias do IBGE
+  #10. !noticia
+  # Uma notícia do IBGE:
+	# OBS: *Pegar aleatóriamente uma das 60 ultimas notícias do IBGE
   defp handleNoticia(msg) do
     resp = HTTPoison.get!("http://servicodados.ibge.gov.br/api/v3/noticias/?tipo=noticia")
 

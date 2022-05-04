@@ -1,12 +1,15 @@
 # Information Bot
 
 ## Members: 
-**Guilherme Henrique Holanda Fernandes**\n
-**Ingrid Moreira da Costa***
+**Guilherme Henrique Holanda Fernandes**
+
+**Ingrid Moreira da Costa**
 
 ## APIs:
 [IBGE](https://servicodados.ibge.gov.br/api/docs)
+
 [World's Air Pollution](https://aqicn.org/api/)
+
 [InverTexto](https://api.invertexto.com/)
 
 ## Commands:
